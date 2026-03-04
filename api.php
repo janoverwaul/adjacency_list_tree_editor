@@ -22,7 +22,7 @@ if (!file_exists($config)) {
 require_once $config;
 // ──────────────────────────────────────────────────────────────────────
 
-require_once 'ADJACENCY_LIST.php';
+require_once 'ADJACENCY_LIST.php'; // https://github.com/blumanski/adjacency_list
 require_once 'KATEGORIE.php';
 
 function respond(bool $success, mixed $data = null, string $error = ''): never {
@@ -141,4 +141,5 @@ try {
 } catch (Throwable $e) {
     respond(false, null, 'Unbekannter Fehler: ' . $e->getMessage());
 }
+
 ?>
