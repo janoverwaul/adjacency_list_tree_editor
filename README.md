@@ -11,14 +11,14 @@ Erweitert [`ADJACENCY_LIST`](./README.md) um eine automatisch verwaltete 1:1-Met
 
 - PHP 8.0+
 - MySQL 8.0+ oder MariaDB 10.2+
-- [`ADJACENCY_LIST`](./README.md) (wird per `require_once 'nestedClass.php'` eingebunden)
+- [`ADJACENCY_LIST`](./README.md) (wird per `require_once 'ADJACENCY_LIST.php'` eingebunden)
 
 ---
 
 ## Installation
 
 ```php
-require_once 'nestedClass.php'; // ADJACENCY_LIST
+require_once 'ADJACENCY_LIST.php'; // ADJACENCY_LIST
 require_once 'KATEGORIE.php';
 
 $kat = new KATEGORIE(
@@ -131,7 +131,7 @@ Nützlich um dynamisch Formulare oder Tabellenköpfe zu generieren.
 ## Vollständiges Beispiel
 
 ```php
-require_once 'nestedClass.php';
+require_once 'ADJACENCY_LIST.php';
 require_once 'KATEGORIE.php';
 
 $kat = new KATEGORIE('localhost', 'shop', 'root', 'geheim');
