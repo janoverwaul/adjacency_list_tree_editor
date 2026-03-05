@@ -44,7 +44,7 @@ class KATEGORIE extends ADJACENCY_LIST {
      * Stellt sicher dass die Meta-Tabelle existiert.
      * Legt sie an falls nicht vorhanden.
      */
-    private function ensure_meta_table(string $sql_table): void {
+    protected function ensure_meta_table(string $sql_table): void {
         $meta = $this->meta_table($sql_table);
         $escaped = $this->pdo->quote($meta);
 
@@ -230,4 +230,5 @@ class KATEGORIE extends ADJACENCY_LIST {
         $all = $this->get_meta_columns($sql_table);
         return array_values(array_diff($all, self::PROTECTED_COLUMNS));
     }
+
 }
