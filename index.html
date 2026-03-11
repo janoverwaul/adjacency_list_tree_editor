@@ -67,7 +67,19 @@
 				</div>
 				<div class="form-group" style="margin-top:10px">
 					<label>Eltern-ID (leer = unter ausgewähltem)</label>
-					<input type="number" id="new-parent" min="0" placeholder="auto">
+					<div style="position:relative">
+						<input type="text" id="new-parent" placeholder="auto" 
+							   autocomplete="off" inputmode="numeric"
+							   oninput="filterNodeDropdown(this.value)"
+							   onblur="setTimeout(closeNodeDropdown, 150)">
+						<div id="node-dropdown" style="
+							display:none;position:absolute;z-index:999;
+							top:100%;left:0;right:0;max-height:200px;overflow-y:auto;
+							background:var(--panel);border:1px solid var(--border);
+							border-radius:8px;margin-top:3px;box-shadow:0 4px 16px #0006;
+						"></div>
+					</div>
+					<datalist id="node-list"></datalist>
 				</div>
 				<button class="btn btn-primary" style="margin-top:12px" onclick="insertNode()">
 					＋ Einfügen
@@ -141,7 +153,8 @@
 			let selectedNode = null;
 			let moveMode = false;
 			let rawNodes = [];
-			let metaCols = []; // aktuelle Spalten aus der DB
+			let metaCols = [];
+			let inserting = false;
 
 			// ── ECharts ──────────────────────────────────────────────────────────
 			const chart = echarts.init(document.getElementById('chart'), null, {
@@ -319,6 +332,7 @@
 
 			// ── Baum laden ────────────────────────────────────────────────────────
 			async function loadTree() {
+				const savedParent = document.getElementById('new-parent').value;
 				// Root immer aus DB holen — ignoriert das Input-Feld komplett
 				const rootRes = await api('root_id');
 				if (!rootRes.success || rootRes.data === null) {
@@ -352,6 +366,9 @@
 				if (selectedNode) {
 					const updated = rawNodes.find(n => n.id === selectedNode.id);
 					if (updated) selectNode(updated);
+				}
+				if (savedParent) {
+					document.getElementById('new-parent').value = savedParent;
 				}
 			}
 
@@ -511,27 +528,23 @@
 
 			// ── Insert ────────────────────────────────────────────────────────────
 			async function insertNode() {
+				if (inserting) return;
+				inserting = true;
+
 				const name = document.getElementById('new-name').value.trim();
-				if (!name) {
-					toast('Bitte einen Namen eingeben.', 'err');
-					return;
-				}
+				if (!name) { toast('Bitte einen Namen eingeben.', 'err'); inserting = false; return; }
 
-				const manualParent = document.getElementById('new-parent').value;
-				let parent_id = manualParent !== '' ? parseInt(manualParent) :
-					(selectedNode ? selectedNode.id : null);
+				const manualParent = document.getElementById('new-parent').value.trim();
+				const parsedParent = parseInt(manualParent);
+				let parent_id = (!isNaN(parsedParent) && manualParent !== '')
+					? parsedParent
+					: (selectedNode ? selectedNode.id : null);
+				const res = await api('insert', { name, parent_id: parent_id ?? '' });
+				inserting = false;
 
-				const res = await api('insert', {
-					name,
-					parent_id: parent_id ?? ''
-				});
-				if (!res.success) {
-					toast(res.error, 'err');
-					return;
-				}
+				if (!res.success) { toast(res.error, 'err'); return; }
 
 				document.getElementById('new-name').value = '';
-				document.getElementById('new-parent').value = '';
 				toast(`"${name}" eingefügt.`, 'ok');
 				await loadTree();
 				document.getElementById('new-name').focus();
@@ -623,6 +636,40 @@
 				document.getElementById('btn-save-name').disabled = true;
 			}
 
+			/** Befüllt das Datalist mit allen aktuellen Knoten (ID + Name). */
+			function filterNodeDropdown(val) {
+				const dd = document.getElementById('node-dropdown');
+				const q = val.trim().toLowerCase();
+				
+				// Nur öffnen wenn etwas getippt wurde
+				if (!q) { closeNodeDropdown(); return; }
+				
+				const matches = rawNodes.filter(n =>
+					String(n.id).startsWith(q) || n.name.toLowerCase().includes(q)
+				).slice(0, 20); // max 20 Treffer
+				
+				if (!matches.length) { closeNodeDropdown(); return; }
+				
+				dd.innerHTML = '';
+				matches.forEach(n => {
+					const item = document.createElement('div');
+					item.textContent = `#${n.id} · ${n.name}`;
+					item.style.cssText = 'padding:7px 10px;cursor:pointer;font-size:12px;font-family:var(--font-mono);border-bottom:1px solid var(--border)';
+					item.onmouseenter = () => item.style.background = 'var(--hover, #2a3a60)';
+					item.onmouseleave = () => item.style.background = '';
+					item.onmousedown  = () => {
+						document.getElementById('new-parent').value = n.id;
+						closeNodeDropdown();
+					};
+					dd.appendChild(item);
+				});
+				dd.style.display = 'block';
+			}
+
+			function closeNodeDropdown() {
+				document.getElementById('node-dropdown').style.display = 'none';
+			}
+
 			async function api(action, params = {}) {
 				const body = new FormData();
 				body.append('action', action);
@@ -683,5 +730,3 @@
 		</script>
 	</body>
 </html>
-
-
