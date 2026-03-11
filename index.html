@@ -319,17 +319,22 @@
 
 			// ── Baum laden ────────────────────────────────────────────────────────
 			async function loadTree() {
-				const rootId = document.getElementById('root-id').value || 1;
-				const res = await api('tree', {
-					root_id: rootId
-				});
-				if (!res.success) {
-					toast(res.error, 'err');
+				// Root immer aus DB holen — ignoriert das Input-Feld komplett
+				const rootRes = await api('root_id');
+				if (!rootRes.success || rootRes.data === null) {
+					chart.clear();
+					rawNodes = [];
+					toast('Tabelle leer – ersten Knoten einfügen.', 'inf');
 					return;
 				}
 
-				rawNodes = res.data;
+				const rootId = rootRes.data;
+				document.getElementById('root-id').value = rootId;
 
+				const res = await api('tree', { root_id: rootId });
+				if (!res.success) { toast(res.error, 'err'); return; }
+
+				rawNodes = res.data;
 				if (!rawNodes || rawNodes.length === 0) {
 					chart.clear();
 					toast('Tabelle leer – ersten Knoten einfügen.', 'inf');
@@ -337,18 +342,13 @@
 				}
 
 				const option = buildTreeOption(rawNodes);
-				if (!option) {
-					toast('Baum konnte nicht gerendert werden.', 'err');
-					return;
-				}
+				if (!option) { toast('Baum konnte nicht gerendert werden.', 'err'); return; }
 
 				chart.setOption(option, false);
 				toast('Baum geladen (' + rawNodes.length + ' Knoten)', 'ok');
 
-				// Meta-Spalten aktualisieren
 				await refreshMetaCols();
 
-				// Selektion wiederherstellen
 				if (selectedNode) {
 					const updated = rawNodes.find(n => n.id === selectedNode.id);
 					if (updated) selectNode(updated);
@@ -683,4 +683,5 @@
 		</script>
 	</body>
 </html>
+
 
