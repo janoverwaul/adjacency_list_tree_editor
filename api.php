@@ -22,7 +22,7 @@ if (!file_exists($config)) {
 require_once $config;
 // ──────────────────────────────────────────────────────────────────────
 
-require_once 'ADJACENCY_LIST.php'; // https://github.com/blumanski/adjacency_list
+require_once 'ADJACENCY_LIST.php';
 require_once 'KATEGORIE.php';
 
 function respond(bool $success, mixed $data = null, string $error = ''): never {
@@ -44,14 +44,14 @@ try {
 		case 'tree':
 			$root_id = (int)($_POST['root_id'] ?? $_GET['root_id'] ?? 1);
 			try {
-				$data = $demo->get_menge_with_meta($root_id, $demoTable);
+				$data = $tree->get_menge_with_meta($root_id, DB_TABLE);
 			} catch (RuntimeException) {
 				$data = [];
 			}
 			respond(true, $data ?: []);
 
 		case 'root_id':
-			respond(true, $demo->get_root_id($demoTable));
+			respond(true, $tree->get_root_id(DB_TABLE));
 
         // -----------------------------------------------------------------
         // Verfügbare Meta-Spalten abfragen
